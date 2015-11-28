@@ -10,7 +10,7 @@ description: >
   A brief series of blog posts about how to create and test plugins
   for the Jekyll static blog framework.
 baseurl: ""
-url: "http://yourdomain.com"
+url: 
 twitter_username: osfameron
 github_username:  osfameron
 
