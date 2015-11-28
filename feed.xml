@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>A Jekyll plugin tutorial</title>
+    <description>A brief series of blog posts about how to create and test plugins for the Jekyll static blog framework.
+</description>
+    <link>osfameron.github.io/jekyll-plugins-tutorial/</link>
+    <atom:link href="osfameron.github.io/jekyll-plugins-tutorial/feed.xml" rel="self" type="application/rss+xml"/>
+    <pubDate>Sat, 28 Nov 2015 15:25:48 +0000</pubDate>
+    <lastBuildDate>Sat, 28 Nov 2015 15:25:48 +0000</lastBuildDate>
+    <generator>Jekyll v3.0.0</generator>
+    
+      <item>
+        <title>1. Introduction to plugins with Jekyll 3.0: pictures of squirrels</title>
+        <description>&lt;p&gt;While writing the framework behind &lt;a href=&quot;http://magnetite-book.com/&quot;&gt;Magnetite&lt;/a&gt;, I ended up writing a number of plugins to do various things.  While there is documentation on both
+&lt;a href=&quot;http://jekyllrb.com/docs/plugins/&quot;&gt;Jekyll plugins&lt;/a&gt; and &lt;a href=&quot;https://github.com/Shopify/liquid/wiki/Liquid-for-Programmers&quot;&gt;Liquid templating&lt;/a&gt;, I found it a little terse on some details (like the precise parameters used), on the bigger picture (which kind of plugin should you use when), and on how to ensure quality in the software engineering of the plugin (testing etc.).  This short series of blog posts will go through a few motivating examples, examining the different ways to accomplish the task at hand.&lt;/p&gt;
+
+&lt;p&gt;I’m assuming you’re a programmer and either know Ruby or a similar language (Perl, Python, Javascript etc.) and basic HTML and CSS.  You’ve installed Jekyll, know how to build and serve a simple site.  And hopefully you’ve skimmed the 2 links above and they made some sense.  (If you’re unsure about any of these, it may be worth starting with the &lt;a href=&quot;http://jekyllrb.com/docs/home/&quot;&gt;Jekyll docs&lt;/a&gt; first!)&lt;/p&gt;
+
+&lt;p&gt;I’ll be using Jekyll 3.0, and recommend you upgrade if you’re still on Jekyll 2.0.  I’m not an expert in Jekyll (or Ruby in fact) so comments welcome on better approaches, code improvements, and ways to make and 3.0 specific examples work in earlier versions!&lt;/p&gt;
+
+&lt;h2 id=&quot;example-inserting-images&quot;&gt;Example: inserting images&lt;/h2&gt;
+
+&lt;p&gt;Markdown allows you to insert images with a simple (if not especially mnemonic) piece of markup.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-markdown&quot; data-lang=&quot;markdown&quot;&gt;    !&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;A lovely squirrel&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;](&lt;/span&gt;&lt;span class=&quot;sx&quot;&gt;/images/squirrel.jpg&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;(Actually, if you’re running somewhere like Github pages – as this blog is currently – you’ll need to prepend the &lt;code&gt;baseurl&lt;/code&gt; (in this case &lt;code&gt;/jekyll-plugins-tutorial&lt;/code&gt;).  So the actual code is something like:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-markdown&quot; data-lang=&quot;markdown&quot;&gt;    !&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;A lovely squirrel&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;](&lt;/span&gt;&lt;span class=&quot;sx&quot;&gt;{{&lt;/span&gt; site.baseurl }}/images/squirrel.jpg)&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;This produces the following HTML:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-html&quot; data-lang=&quot;html&quot;&gt;    &lt;span class=&quot;nt&quot;&gt;&amp;lt;img&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;alt=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;A lovely squirrel&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;src=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;/jekyll-plugins-tutorial/images/squirrel.jpg&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;And the following image:&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/jekyll-plugins-tutorial/images/squirrel.jpg&quot; alt=&quot;A lovely squirrel&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;But that’s not necessarily all you want to do with an image.  You may wish to wrap it in a &lt;code&gt;&amp;lt;div&amp;gt;&lt;/code&gt; to format the CSS container (or perhaps better, a more semantic &lt;code&gt;&amp;lt;figure&amp;gt;&lt;/code&gt;) and as well the &lt;code&gt;alt&lt;/code&gt; tag, you might want a caption.  (Certainly the photographer who has released the image under a Creative Commons license will want you to credit them!)  For bonus points, the caption should link to the source of the image.  Putting that all together we might do something like:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-html&quot; data-lang=&quot;html&quot;&gt;    &lt;span class=&quot;nt&quot;&gt;&amp;lt;figure&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;img&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;alt=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;A lovely squirrel&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;src=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;/jekyll-plugins-tutorial/images/squirrel.jpg&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;figcaption&amp;gt;&lt;/span&gt;
+        A lovely squirrel.
+        Image credit:
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;a&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;href=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;https://www.flickr.com/photos/47644980@N00/5681166704&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;
+           CC-BY-NC-SA hakim.cassimally
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;/a&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;/figcaption&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;/figure&amp;gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Which gives us:&lt;/p&gt;
+
+&lt;figure&gt;
+  &lt;img alt=&quot;A lovely squirrel&quot; src=&quot;/jekyll-plugins-tutorial/images/squirrel.jpg&quot; /&gt;
+  &lt;figcaption&gt;
+    A lovely squirrel.
+    Image credit:
+    &lt;a href=&quot;https://www.flickr.com/photos/47644980@N00/5681166704&quot;&gt;
+       CC-BY-NC-SA hakim.cassimally
+    &lt;/a&gt;
+  &lt;/figcaption&gt;
+&lt;/figure&gt;
+
+&lt;p&gt;Of course in Markdown you can insert this HTML verbatim.  But it’s a fair amount of boilerplate (we’ve even written the same &lt;code&gt;alt&lt;/code&gt; text in two places).  So if we ever use the image again (and we may well do, as it is such a lovely squirrel) then we’re going to have to type (or copy-paste) it.  Worse, if we change the markup or the details, we’ll have to remember to edit all the places we used it!&lt;/p&gt;
+
+&lt;p&gt;Let’s look at those 2 issues (markup and details) in turn.&lt;/p&gt;
+
+&lt;h3 id=&quot;abstracting-markup&quot;&gt;Abstracting markup&lt;/h3&gt;
+
+&lt;p&gt;This is where I’m going to start telling you about plugins, right?  Well, not quite.  While we could (and it’s what I did when I first approached this problem) it’s perhaps more useful to see what &lt;em&gt;built-in&lt;/em&gt; Jekyll functionality we can apply to deal with the problem.&lt;/p&gt;
+
+&lt;p&gt;The obvious solution is a &lt;a href=&quot;http://jekyllrb.com/docs/templates/#includes&quot;&gt;template include&lt;/a&gt;. So we could write:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-markdown&quot; data-lang=&quot;markdown&quot;&gt;    {% include image src=&quot;/images/squirrel.jpg&quot;
+         alt=&quot;A lovely squirrel (via include)&quot;
+         credit=&quot;CC-BY-NC-SA hakim.cassimally&quot;
+         creditlink=&quot;https://www.flickr.com/photos/47644980@N00/5681166704&quot; %}&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;These variables get passed in in the &lt;code&gt;include&lt;/code&gt; object.  Note that here, I’m passing &lt;code&gt;src&lt;/code&gt; without the &lt;code&gt;baseurl&lt;/code&gt;: this cleans up the code at the point of calling - but we’ll have to add it inside the included template. So now, all we need is the new include called &lt;code&gt;_includes/image&lt;/code&gt; like so:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-html&quot; data-lang=&quot;html&quot;&gt;    &lt;span class=&quot;nt&quot;&gt;&amp;lt;figure&amp;gt;&lt;/span&gt;
+     &lt;span class=&quot;nt&quot;&gt;&amp;lt;img&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;alt=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;{{ include.alt }}&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;src=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;{{ include.src | prepend: site.baseurl }}&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;
+     &lt;span class=&quot;nt&quot;&gt;&amp;lt;figcaption&amp;gt;&lt;/span&gt;
+       {{ include.alt }}
+       Image credit:
+       &lt;span class=&quot;nt&quot;&gt;&amp;lt;a&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;href=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;{{ include.creditlink }}&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;
+         {{ include.credit }}
+       &lt;span class=&quot;nt&quot;&gt;&amp;lt;/a&amp;gt;&lt;/span&gt;
+     &lt;span class=&quot;nt&quot;&gt;&amp;lt;/figcaption&amp;gt;&lt;/span&gt;
+   &lt;span class=&quot;nt&quot;&gt;&amp;lt;/figure&amp;gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;&lt;strong&gt;NB:&lt;/strong&gt; I called the file &lt;code&gt;_includes/image&lt;/code&gt; rather than &lt;code&gt;_includes/image.html&lt;/code&gt; despite the fact that all the default Jekyll templates in &lt;code&gt;_includes&lt;/code&gt; have the &lt;code&gt;.html&lt;/code&gt; suffix.  That’s because &lt;code&gt;{% include image %}&lt;/code&gt; feels more “pluginny”, and distinguishes these widget style includes from layout ones like &lt;code&gt;head.html&lt;/code&gt; etc.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Let’s try it out!&lt;/p&gt;
+
+&lt;figure&gt;
+  &lt;img alt=&quot;A lovely squirrel (via include)&quot; src=&quot;/jekyll-plugins-tutorial/images/squirrel.jpg&quot; /&gt;
+  &lt;figcaption&gt;
+    A lovely squirrel (via include)
+    Image credit:
+    &lt;a href=&quot;https://www.flickr.com/photos/47644980@N00/5681166704&quot;&gt;
+      CC-BY-NC-SA hakim.cassimally
+    &lt;/a&gt;
+  &lt;/figcaption&gt;
+&lt;/figure&gt;
+
+&lt;p&gt;Hurray for squirrels!&lt;/p&gt;
+
+&lt;h3 id=&quot;abstracting-the-data&quot;&gt;Abstracting the data&lt;/h3&gt;
+
+&lt;p&gt;Though this is getting a little nicer, I think what we really want is this:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-markdown&quot; data-lang=&quot;markdown&quot;&gt;    {% include image2 id=&quot;squirrel&quot; %}&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;We can use Jekyll’s lovely &lt;a href=&quot;http://jekyllrb.com/docs/datafiles/&quot;&gt;Data Files&lt;/a&gt; to store the
+information.  For example if we create a file called &lt;code&gt;_data/images.yml&lt;/code&gt; and
+transfer our information into tha}&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-yaml&quot; data-lang=&quot;yaml&quot;&gt;   &lt;span class=&quot;s&quot;&gt;squirrel&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt;
+     &lt;span class=&quot;s&quot;&gt;src&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;/images/squirrel.jpg&lt;/span&gt;
+     &lt;span class=&quot;s&quot;&gt;alt&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;A&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s&quot;&gt;lovely&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s&quot;&gt;squirrel&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s&quot;&gt;(via&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s&quot;&gt;include&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s&quot;&gt;+&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s&quot;&gt;data)&quot;&lt;/span&gt;
+     &lt;span class=&quot;s&quot;&gt;credit&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;CC-BY-NC-SA hakim.cassimally&lt;/span&gt;
+     &lt;span class=&quot;s&quot;&gt;creditlink&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;https://www.flickr.com/photos/47644980@N00/5681166704&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Now let’s create a new version of our widget as &lt;code&gt;_includes/image2&lt;/code&gt;:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-markdown&quot; data-lang=&quot;markdown&quot;&gt;    {% assign image = site.data.images&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;include.id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; %}
+    {% if image %}
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;figure&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;img&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;alt=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;{{ image.alt }}&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;src=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;{{ image.src | prepend: site.baseurl }}&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;figcaption&amp;gt;&lt;/span&gt;
+        {{ image.alt }}
+        Image credit:
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;a&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;href=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;{{ image.creditlink }}&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;
+          {{ image.credit }}
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;/a&amp;gt;&lt;/span&gt;
+      &lt;span class=&quot;nt&quot;&gt;&amp;lt;/figcaption&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;/figure&amp;gt;&lt;/span&gt;
+    {% endif %}&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;The first line gets the &lt;code&gt;id&lt;/code&gt; from the call, and fetches the data from the yaml file by checking in &lt;code&gt;site.data.images&lt;/code&gt; (which gets resolved to &lt;code&gt;_data/images.yml&lt;/code&gt;)  If it finds it, then we carry on as before, except that we’re looking in this new &lt;code&gt;images&lt;/code&gt; instead of the &lt;code&gt;include&lt;/code&gt; object.  Let’s see if it works:&lt;/p&gt;
+
+&lt;figure&gt;
+  &lt;img alt=&quot;A lovely squirrel (via include + data)&quot; src=&quot;/jekyll-plugins-tutorial/images/squirrel.jpg&quot; /&gt;
+  &lt;figcaption&gt;
+    A lovely squirrel (via include + data)
+    Image credit:
+    &lt;a href=&quot;https://www.flickr.com/photos/47644980@N00/5681166704&quot;&gt;
+      CC-BY-NC-SA hakim.cassimally
+    &lt;/a&gt;
+  &lt;/figcaption&gt;
+&lt;/figure&gt;
+
+&lt;p&gt;So, if you’ve read up to this point, you’ll realise I’ve led you a merry dance and we’ve not even seen a hint of an actual plugin!  But don’t worry, we’ll (probably) look at them in the next post.&lt;/p&gt;
+
+&lt;h2 id=&quot;comments&quot;&gt;Comments&lt;/h2&gt;
+
+&lt;p&gt;(Disqus not yet configured: ping me on IRC osfameron on #jekyll in the meantime)&lt;/p&gt;
+
+</description>
+        <pubDate>Sat, 28 Nov 2015 15:20:00 +0000</pubDate>
+        <link>osfameron.github.io/jekyll-plugins-tutorial/2015/11/28/jekyll-plugins-tutorial-part-1.html</link>
+        <guid isPermaLink="true">osfameron.github.io/jekyll-plugins-tutorial/2015/11/28/jekyll-plugins-tutorial-part-1.html</guid>
+        
+        
+      </item>
+    
+  </channel>
+</rss>
