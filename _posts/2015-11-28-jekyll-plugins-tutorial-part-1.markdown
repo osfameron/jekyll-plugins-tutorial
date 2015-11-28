@@ -57,8 +57,48 @@ Which gives us:
 
 Of course in Markdown you can insert this HTML verbatim.  But it's a fair amount of boilerplate (we've even written the same `alt` text in two places).  So if we ever use the image again (and we may well do, as it is such a lovely squirrel) then we're going to have to type (or copy-paste) it.  Worse, if we change the markup or the details, we'll have to remember to edit all the places we used it! 
 
-TBC
+Let's look at those 2 issues (markup and details) in turn.
+
+### Abstracting markup
+
+This is where I'm going to start telling you about plugins, right?  Well, not quite.  While we could (and it's what I did when I first approached this problem) it's perhaps more useful to see what *built-in* Jekyll functionality we can apply to deal with the problem.
+
+The obvious solution is a [template include][jekyllrb-template-include]. So we could write:
+
+{% highlight markdown %}{% raw %}
+    {% include image src="/images/squirrel.jpg"
+         alt="A lovely squirrel."
+         credit="CC-BY-NC-SA hakim.cassimally"
+         creditlink="https://www.flickr.com/photos/47644980@N00/5681166704" %}
+{% endraw %}{% endhighlight %}
+
+These variables get passed in in the `include` object, so all we need is a new include called `_includes/image` like so:
+
+{% highlight html %}{% raw %}
+    <figure>
+     <img alt="{{ include.alt }}" src="{{ include.src }}">
+     <figcaption>
+       {{ include.alt }}
+       Image credit:
+       <a href="{{ include.creditlink }}">
+         {{ include.credit }}
+       </a>
+     </figcaption>
+   </figure>
+{% endraw %}{% endhighlight %}
+
+> **NB:** I called the file `_includes/image` rather than `_includes/image.html` despite the fact that all the default Jekyll templates in `_includes` have the `.html` suffix.  That's because `{% raw %}{% include image %}{% endraw %}` feels more "pluginny", and distinguishes these widget style includes from layout ones like `head.html` etc.
+
+Let's try it out!
+
+{% include image src="/images/squirrel.jpg"
+  alt="A lovely squirrel."
+  credit="CC-BY-NC-SA hakim.cassimally"
+  creditlink="https://www.flickr.com/photos/47644980@N00/5681166704" %}
+
+Hurray for squirrels!
 
 [magnetite-book]: http://magnetite-book.com/
 [jekyllrb-plugins]: http://jekyllrb.com/docs/plugins/
 [liquid-for-programmers]: https://github.com/Shopify/liquid/wiki/Liquid-for-Programmers
+[jekyllrb-template-include]: http://jekyllrb.com/docs/templates/#includes

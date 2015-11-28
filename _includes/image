@@ -1,0 +1,10 @@
+<figure>
+  <img alt="{{ include.alt }}" src="{{ include.src }}">
+  <figcaption>
+    {{ include.alt }}
+    Image credit:
+    <a href="{{ include.creditlink }}">
+      {{ include.credit }}
+    </a>
+  </figcaption>
+</figure>
