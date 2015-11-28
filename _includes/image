@@ -1,5 +1,5 @@
 <figure>
-  <img alt="{{ include.alt }}" src="{{ include.src }}">
+  <img alt="{{ include.alt }}" src="{{ include.src | prepend: site.baseurl }}">
   <figcaption>
     {{ include.alt }}
     Image credit:

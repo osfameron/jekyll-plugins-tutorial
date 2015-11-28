@@ -9,8 +9,8 @@ email: osfameron@cpan.org
 description: >
   A brief series of blog posts about how to create and test plugins
   for the Jekyll static blog framework.
-baseurl: ""
-url: 
+baseurl: "/jekyll-plugins-tutorial"
+url: 'osfameron.github.io'
 twitter_username: osfameron
 github_username:  osfameron
 

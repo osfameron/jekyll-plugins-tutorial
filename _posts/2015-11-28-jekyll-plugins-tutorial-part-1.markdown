@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "1. Introduction to plugins with Jekyll 3.0: pictures of squirrels"
-date:   2015-11-28 10:11:06 +0000
+date:   2015-11-28 15:20:00 +0000
 ---
 
 While writing the framework behind [Magnetite][magnetite-book], I ended up writing a number of plugins to do various things.  While there is documentation on both
@@ -19,21 +19,27 @@ Markdown allows you to insert images with a simple (if not especially mnemonic) 
     ![A lovely squirrel](/images/squirrel.jpg)
 {% endhighlight %}
 
+(Actually, if you're running somewhere like Github pages -- as this blog is currently -- you'll need to prepend the `baseurl` (in this case `/jekyll-plugins-tutorial`).  So the actual code is something like:
+
+{% highlight markdown %}
+    ![A lovely squirrel]({% raw %}{{ site.baseurl }}{% endraw %}/images/squirrel.jpg)
+{% endhighlight %}
+
 This produces the following HTML:
 
 {% highlight html %}
-    <img alt="A lovely squirrel" src="/images/squirrel.jpg">
+    <img alt="A lovely squirrel" src="{{ site.baseurl }}/images/squirrel.jpg">
 {% endhighlight %}
 
 And the following image:
 
-![A lovely squirrel](/images/squirrel.jpg)
+![A lovely squirrel]({{ site.baseurl }}/images/squirrel.jpg)
 
 But that's not necessarily all you want to do with an image.  You may wish to wrap it in a `<div>` to format the CSS container (or perhaps better, a more semantic `<figure>`) and as well the `alt` tag, you might want a caption.  (Certainly the photographer who has released the image under a Creative Commons license will want you to credit them!)  For bonus points, the caption should link to the source of the image.  Putting that all together we might do something like: 
 
 {% highlight html %}
     <figure>
-      <img alt="A lovely squirrel" src="/images/squirrel.jpg">
+      <img alt="A lovely squirrel" src="{{ site.baseurl }}/images/squirrel.jpg">
       <figcaption>
         A lovely squirrel.
         Image credit:
@@ -47,7 +53,7 @@ But that's not necessarily all you want to do with an image.  You may wish to wr
 Which gives us:
 
 <figure>
-  <img alt="A lovely squirrel" src="/images/squirrel.jpg">
+  <img alt="A lovely squirrel" src="{{ site.baseurl }}/images/squirrel.jpg">
   <figcaption>
     A lovely squirrel.
     Image credit:
@@ -74,11 +80,11 @@ The obvious solution is a [template include][jekyllrb-template-include]. So we c
          creditlink="https://www.flickr.com/photos/47644980@N00/5681166704" %}
 {% endraw %}{% endhighlight %}
 
-These variables get passed in in the `include` object, so all we need is a new include called `_includes/image` like so:
+These variables get passed in in the `include` object.  Note that here, I'm passing `src` without the `baseurl`: this cleans up the code at the point of calling - but we'll have to add it inside the included template. So now, all we need is the new include called `_includes/image` like so:
 
 {% highlight html %}{% raw %}
     <figure>
-     <img alt="{{ include.alt }}" src="{{ include.src }}">
+     <img alt="{{ include.alt }}" src="{{ include.src | prepend: site.baseurl }}">
      <figcaption>
        {{ include.alt }}
        Image credit:
@@ -125,7 +131,7 @@ Now let's create a new version of our widget as `_includes/image2`:
     {% assign image = site.data.images[include.id] %}
     {% if image %}
     <figure>
-      <img alt="{{ image.alt }}" src="{{ image.src }}">
+      <img alt="{{ image.alt }}" src="{{ image.src | prepend: site.baseurl }}">
       <figcaption>
         {{ image.alt }}
         Image credit:

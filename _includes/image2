@@ -1,7 +1,7 @@
 {% assign image = site.data.images[include.id] %}
 {% if image %}
 <figure>
-  <img alt="{{ image.alt }}" src="{{ image.src }}">
+  <img alt="{{ image.alt }}" src="{{ image.src | prepend: site.baseurl }}">
   <figcaption>
     {{ image.alt }}
     Image credit:
