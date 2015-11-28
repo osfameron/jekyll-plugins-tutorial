@@ -1,10 +1,11 @@
+{% assign image = site.data.images[include.id] | default: include %}
 <figure>
-  <img alt="{{ include.alt }}" src="{{ include.src | prepend: site.baseurl }}">
+  <img alt="{{ image.alt }}" src="{{ image.src | prepend: site.baseurl }}">
   <figcaption>
-    {{ include.alt }}
+    {{ image.alt }}
     Image credit:
-    <a href="{{ include.creditlink }}">
-      {{ include.credit }}
+    <a href="{{ image.creditlink }}">
+      {{ image.credit }}
     </a>
   </figcaption>
 </figure>

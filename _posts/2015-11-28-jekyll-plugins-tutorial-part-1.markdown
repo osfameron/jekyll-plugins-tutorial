@@ -111,7 +111,7 @@ Hurray for squirrels!
 Though this is getting a little nicer, I think what we really want is this:
 
 {% highlight markdown %}{% raw %}
-    {% include image2 id="squirrel" %}
+    {% include image id="squirrel" %}
 {% endraw %}{% endhighlight %}
 
 We can use Jekyll's lovely [Data Files][jekyllrb-datafiles] to store the
@@ -126,10 +126,10 @@ transfer our information into tha}
      creditlink: https://www.flickr.com/photos/47644980@N00/5681166704
 {% endhighlight %}
 
-Now let's create a new version of our widget as `_includes/image2`:
+Now let's update our `_includes/image`.
+
 {% highlight markdown %}{% raw %}
-    {% assign image = site.data.images[include.id] %}
-    {% if image %}
+    {% assign image = site.data.images[include.id] | default: include %}
     <figure>
       <img alt="{{ image.alt }}" src="{{ image.src | prepend: site.baseurl }}">
       <figcaption>
@@ -140,12 +140,11 @@ Now let's create a new version of our widget as `_includes/image2`:
         </a>
       </figcaption>
     </figure>
-    {% endif %}
 {% endraw %}{% endhighlight %}
 
-The first line gets the `id` from the call, and fetches the data from the yaml file by checking in `site.data.images` (which gets resolved to `_data/images.yml`)  If it finds it, then we carry on as before, except that we're looking in this new `images` instead of the `include` object.  Let's see if it works:
+The first line gets the `id` from the call, and fetches the data from the yaml file by checking in `site.data.images` (which gets resolved to `_data/images.yml`)  If it finds it, then we carry on as before, except that we're looking in this new `images` instead of the `include` object.  If we don't find it, then we default to the previous behaviour.  Let's see if it works:
 
-{% include image2 id="squirrel" %}
+{% include image id="squirrel" %}
 
 So, if you've read up to this point, you'll realise I've led you a merry dance and we've not even seen a hint of an actual plugin!  But don't worry, we'll (probably) look at them in the next post.
 
