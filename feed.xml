@@ -6,8 +6,8 @@
 </description>
     <link>osfameron.github.io/jekyll-plugins-tutorial/</link>
     <atom:link href="osfameron.github.io/jekyll-plugins-tutorial/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Sat, 28 Nov 2015 15:25:48 +0000</pubDate>
-    <lastBuildDate>Sat, 28 Nov 2015 15:25:48 +0000</lastBuildDate>
+    <pubDate>Sat, 28 Nov 2015 16:04:33 +0000</pubDate>
+    <lastBuildDate>Sat, 28 Nov 2015 16:04:33 +0000</lastBuildDate>
     <generator>Jekyll v3.0.0</generator>
     
       <item>
@@ -114,7 +114,7 @@
 
 &lt;p&gt;Though this is getting a little nicer, I think what we really want is this:&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-markdown&quot; data-lang=&quot;markdown&quot;&gt;    {% include image2 id=&quot;squirrel&quot; %}&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-markdown&quot; data-lang=&quot;markdown&quot;&gt;    {% include image id=&quot;squirrel&quot; %}&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
 
 &lt;p&gt;We can use Jekyll’s lovely &lt;a href=&quot;http://jekyllrb.com/docs/datafiles/&quot;&gt;Data Files&lt;/a&gt; to store the
 information.  For example if we create a file called &lt;code&gt;_data/images.yml&lt;/code&gt; and
@@ -126,10 +126,9 @@ transfer our information into tha}&lt;/p&gt;
      &lt;span class=&quot;s&quot;&gt;credit&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;CC-BY-NC-SA hakim.cassimally&lt;/span&gt;
      &lt;span class=&quot;s&quot;&gt;creditlink&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;https://www.flickr.com/photos/47644980@N00/5681166704&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
 
-&lt;p&gt;Now let’s create a new version of our widget as &lt;code&gt;_includes/image2&lt;/code&gt;:&lt;/p&gt;
+&lt;p&gt;Now let’s update our &lt;code&gt;_includes/image&lt;/code&gt;.&lt;/p&gt;
 
-&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-markdown&quot; data-lang=&quot;markdown&quot;&gt;    {% assign image = site.data.images&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;include.id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; %}
-    {% if image %}
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-markdown&quot; data-lang=&quot;markdown&quot;&gt;    {% assign image = site.data.images&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;include.id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; | default: include %}
     &lt;span class=&quot;nt&quot;&gt;&amp;lt;figure&amp;gt;&lt;/span&gt;
       &lt;span class=&quot;nt&quot;&gt;&amp;lt;img&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;alt=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;{{ image.alt }}&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;src=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;{{ image.src | prepend: site.baseurl }}&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;
       &lt;span class=&quot;nt&quot;&gt;&amp;lt;figcaption&amp;gt;&lt;/span&gt;
@@ -139,10 +138,9 @@ transfer our information into tha}&lt;/p&gt;
           {{ image.credit }}
         &lt;span class=&quot;nt&quot;&gt;&amp;lt;/a&amp;gt;&lt;/span&gt;
       &lt;span class=&quot;nt&quot;&gt;&amp;lt;/figcaption&amp;gt;&lt;/span&gt;
-    &lt;span class=&quot;nt&quot;&gt;&amp;lt;/figure&amp;gt;&lt;/span&gt;
-    {% endif %}&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;/figure&amp;gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
 
-&lt;p&gt;The first line gets the &lt;code&gt;id&lt;/code&gt; from the call, and fetches the data from the yaml file by checking in &lt;code&gt;site.data.images&lt;/code&gt; (which gets resolved to &lt;code&gt;_data/images.yml&lt;/code&gt;)  If it finds it, then we carry on as before, except that we’re looking in this new &lt;code&gt;images&lt;/code&gt; instead of the &lt;code&gt;include&lt;/code&gt; object.  Let’s see if it works:&lt;/p&gt;
+&lt;p&gt;The first line gets the &lt;code&gt;id&lt;/code&gt; from the call, and fetches the data from the yaml file by checking in &lt;code&gt;site.data.images&lt;/code&gt; (which gets resolved to &lt;code&gt;_data/images.yml&lt;/code&gt;)  If it finds it, then we carry on as before, except that we’re looking in this new &lt;code&gt;images&lt;/code&gt; instead of the &lt;code&gt;include&lt;/code&gt; object.  If we don’t find it, then we default to the previous behaviour.  Let’s see if it works:&lt;/p&gt;
 
 &lt;figure&gt;
   &lt;img alt=&quot;A lovely squirrel (via include + data)&quot; src=&quot;/jekyll-plugins-tutorial/images/squirrel.jpg&quot; /&gt;

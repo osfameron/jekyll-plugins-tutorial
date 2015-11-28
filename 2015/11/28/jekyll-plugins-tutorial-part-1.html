@@ -164,7 +164,7 @@
 
 <p>Though this is getting a little nicer, I think what we really want is this:</p>
 
-<figure class="highlight"><pre><code class="language-markdown" data-lang="markdown">    {% include image2 id="squirrel" %}</code></pre></figure>
+<figure class="highlight"><pre><code class="language-markdown" data-lang="markdown">    {% include image id="squirrel" %}</code></pre></figure>
 
 <p>We can use Jekyll’s lovely <a href="http://jekyllrb.com/docs/datafiles/">Data Files</a> to store the
 information.  For example if we create a file called <code>_data/images.yml</code> and
@@ -176,10 +176,9 @@ transfer our information into tha}</p>
      <span class="s">credit</span><span class="pi">:</span> <span class="s">CC-BY-NC-SA hakim.cassimally</span>
      <span class="s">creditlink</span><span class="pi">:</span> <span class="s">https://www.flickr.com/photos/47644980@N00/5681166704</span></code></pre></figure>
 
-<p>Now let’s create a new version of our widget as <code>_includes/image2</code>:</p>
+<p>Now let’s update our <code>_includes/image</code>.</p>
 
-<figure class="highlight"><pre><code class="language-markdown" data-lang="markdown">    {% assign image = site.data.images<span class="p">[</span><span class="nv">include.id</span><span class="p">]</span> %}
-    {% if image %}
+<figure class="highlight"><pre><code class="language-markdown" data-lang="markdown">    {% assign image = site.data.images<span class="p">[</span><span class="nv">include.id</span><span class="p">]</span> | default: include %}
     <span class="nt">&lt;figure&gt;</span>
       <span class="nt">&lt;img</span> <span class="na">alt=</span><span class="s">"{{ image.alt }}"</span> <span class="na">src=</span><span class="s">"{{ image.src | prepend: site.baseurl }}"</span><span class="nt">&gt;</span>
       <span class="nt">&lt;figcaption&gt;</span>
@@ -189,10 +188,9 @@ transfer our information into tha}</p>
           {{ image.credit }}
         <span class="nt">&lt;/a&gt;</span>
       <span class="nt">&lt;/figcaption&gt;</span>
-    <span class="nt">&lt;/figure&gt;</span>
-    {% endif %}</code></pre></figure>
+    <span class="nt">&lt;/figure&gt;</span></code></pre></figure>
 
-<p>The first line gets the <code>id</code> from the call, and fetches the data from the yaml file by checking in <code>site.data.images</code> (which gets resolved to <code>_data/images.yml</code>)  If it finds it, then we carry on as before, except that we’re looking in this new <code>images</code> instead of the <code>include</code> object.  Let’s see if it works:</p>
+<p>The first line gets the <code>id</code> from the call, and fetches the data from the yaml file by checking in <code>site.data.images</code> (which gets resolved to <code>_data/images.yml</code>)  If it finds it, then we carry on as before, except that we’re looking in this new <code>images</code> instead of the <code>include</code> object.  If we don’t find it, then we default to the previous behaviour.  Let’s see if it works:</p>
 
 <figure>
   <img alt="A lovely squirrel (via include + data)" src="/jekyll-plugins-tutorial/images/squirrel.jpg" />
