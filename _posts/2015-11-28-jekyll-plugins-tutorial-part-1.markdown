@@ -7,6 +7,8 @@ date:   2015-11-28 10:11:06 +0000
 While writing the framework behind [Magnetite][magnetite-book], I ended up writing a number of plugins to do various things.  While there is documentation on both
 [Jekyll plugins][jekyllrb-plugins] and [Liquid templating][liquid-for-programmers], I found it a little terse on some details (like the precise parameters used), on the bigger picture (which kind of plugin should you use when), and on how to ensure quality in the software engineering of the plugin (testing etc.).  This short series of blog posts will go through a few motivating examples, examining the different ways to accomplish the task at hand.
 
+I'm assuming you're a programmer and either know Ruby or a similar language (Perl, Python, Javascript etc.) and basic HTML and CSS.  You've installed Jekyll, know how to build and serve a simple site.  And hopefully you've skimmed the 2 links above and they made some sense.  (If you're unsure about any of these, it may be worth starting with the [Jekyll docs][jekyllrb-docs] first!) 
+
 I'll be using Jekyll 3.0, and recommend you upgrade if you're still on Jekyll 2.0.  I'm not an expert in Jekyll (or Ruby in fact) so comments welcome on better approaches, code improvements, and ways to make and 3.0 specific examples work in earlier versions! 
 
 ## Example: inserting images
@@ -67,7 +69,7 @@ The obvious solution is a [template include][jekyllrb-template-include]. So we c
 
 {% highlight markdown %}{% raw %}
     {% include image src="/images/squirrel.jpg"
-         alt="A lovely squirrel."
+         alt="A lovely squirrel (via include)"
          credit="CC-BY-NC-SA hakim.cassimally"
          creditlink="https://www.flickr.com/photos/47644980@N00/5681166704" %}
 {% endraw %}{% endhighlight %}
@@ -92,13 +94,62 @@ These variables get passed in in the `include` object, so all we need is a new i
 Let's try it out!
 
 {% include image src="/images/squirrel.jpg"
-  alt="A lovely squirrel."
+  alt="A lovely squirrel (via include)"
   credit="CC-BY-NC-SA hakim.cassimally"
   creditlink="https://www.flickr.com/photos/47644980@N00/5681166704" %}
 
 Hurray for squirrels!
 
+### Abstracting the data
+
+Though this is getting a little nicer, I think what we really want is this:
+
+{% highlight markdown %}{% raw %}
+    {% include image2 id="squirrel" %}
+{% endraw %}{% endhighlight %}
+
+We can use Jekyll's lovely [Data Files][jekyllrb-datafiles] to store the
+information.  For example if we create a file called `_data/images.yml` and
+transfer our information into tha}
+
+{% highlight yaml %}
+   squirrel:
+     src: /images/squirrel.jpg
+     alt: "A lovely squirrel (via include + data)"
+     credit: CC-BY-NC-SA hakim.cassimally
+     creditlink: https://www.flickr.com/photos/47644980@N00/5681166704
+{% endhighlight %}
+
+Now let's create a new version of our widget as `_includes/image2`:
+{% highlight markdown %}{% raw %}
+    {% assign image = site.data.images[include.id] %}
+    {% if image %}
+    <figure>
+      <img alt="{{ image.alt }}" src="{{ image.src }}">
+      <figcaption>
+        {{ image.alt }}
+        Image credit:
+        <a href="{{ image.creditlink }}">
+          {{ image.credit }}
+        </a>
+      </figcaption>
+    </figure>
+    {% endif %}
+{% endraw %}{% endhighlight %}
+
+The first line gets the `id` from the call, and fetches the data from the yaml file by checking in `site.data.images` (which gets resolved to `_data/images.yml`)  If it finds it, then we carry on as before, except that we're looking in this new `images` instead of the `include` object.  Let's see if it works:
+
+{% include image2 id="squirrel" %}
+
+So, if you've read up to this point, you'll realise I've led you a merry dance and we've not even seen a hint of an actual plugin!  But don't worry, we'll (probably) look at them in the next post.
+
+## Comments
+
+(Disqus not yet configured: ping me on IRC osfameron on #jekyll in the meantime)
+
 [magnetite-book]: http://magnetite-book.com/
 [jekyllrb-plugins]: http://jekyllrb.com/docs/plugins/
 [liquid-for-programmers]: https://github.com/Shopify/liquid/wiki/Liquid-for-Programmers
 [jekyllrb-template-include]: http://jekyllrb.com/docs/templates/#includes
+[jekyllrb-datafiles]: http://jekyllrb.com/docs/datafiles/
+[jekyllrb-docs]: http://jekyllrb.com/docs/home/

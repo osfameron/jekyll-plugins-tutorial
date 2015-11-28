@@ -1,0 +1,13 @@
+{% assign image = site.data.images[include.id] %}
+{% if image %}
+<figure>
+  <img alt="{{ image.alt }}" src="{{ image.src }}">
+  <figcaption>
+    {{ image.alt }}
+    Image credit:
+    <a href="{{ image.creditlink }}">
+      {{ image.credit }}
+    </a>
+  </figcaption>
+</figure>
+{% endif %}
