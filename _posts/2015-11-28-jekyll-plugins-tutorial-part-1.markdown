@@ -148,10 +148,6 @@ The first line gets the `id` from the call, and fetches the data from the yaml f
 
 So, if you've read up to this point, you'll realise I've led you a merry dance and we've not even seen a hint of an actual plugin!  But don't worry, we'll (probably) look at them in the next post.
 
-## Comments
-
-(Disqus not yet configured: ping me on IRC osfameron on #jekyll in the meantime)
-
 [magnetite-book]: http://magnetite-book.com/
 [jekyllrb-plugins]: http://jekyllrb.com/docs/plugins/
 [liquid-for-programmers]: https://github.com/Shopify/liquid/wiki/Liquid-for-Programmers

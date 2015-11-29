@@ -13,6 +13,7 @@ baseurl: "/jekyll-plugins-tutorial"
 url: 'osfameron.github.io'
 twitter_username: osfameron
 github_username:  osfameron
+disqus_shortname: jekyllpluginstutorial
 
 # Build settings
 markdown: kramdown
