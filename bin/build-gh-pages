@@ -1,0 +1,9 @@
+#!/bin/bash
+
+jekyll build
+git checkout gh-pages
+rsync -avz _site/ .
+git diff
+git commit
+git push
+git checkout -
