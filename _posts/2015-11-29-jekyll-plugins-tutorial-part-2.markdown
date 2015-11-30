@@ -9,7 +9,17 @@ In the [last post]({{ post.prev.url }}), I showed how to create an image widget 
 > The best plugin is the plugin that is not written
 > -- Confucius <super><a href="#note-1">[1]</a></super>
 
-But I did promise you a tutorial, so let's now refactor our widget into a plugin!
+But I did promise you a tutorial, and so let's now refactor what we've already done into a plugin so that instead of:
+
+{% highlight markdown %}{% raw %}
+    {% include image id="squirrel" %}
+{% endraw %}{% endhighlight %}
+
+we can call:
+
+{% highlight markdown %}{% raw %}
+    {% image squirrel %}
+{% endraw %}{% endhighlight %}
 
 If the word "refactor" made you think "but what about tests?" then you're in luck, as that's the first thing we're going to do.  (And if you thought "we don't need no steenking tests", then you can [skip the bit about testing](#no-tests-please-we-re-British)
 
@@ -30,7 +40,7 @@ is rendered into the correct HTML.  As I couldn't find a lot of information avai
 
 (Comments from Ruby/Jekyll experts very welcome on cleaning up this cargo-culted material!)
 
-Of course we now need a test!  The file is at `[test/test_image_output.rb][github-test_image_output-rb]`, and we'll go through it here in some detail:
+Of course we now need a test!  The file is at [`test/test_image_output.rb`][github-test_image_output-rb], and we'll go through it here in some detail: 
 
 {% highlight ruby %}
 require 'helper'
@@ -51,7 +61,7 @@ Then we create a `context`, with a human-readable name to define the particular 
     end
 {% endhighlight %}
 
-This is the `setup` routine, where we make sure that all the things we need to have available to us are all in place.  One of the things the `helper.rb` script does for us is provide the `@site` variable, which is a `Jekyll::Site` object (which is conceptually linked to the `{% raw %}{{ site }}{% endraw %}` variable you'll have seen in your Jekyll templates.  This object has various methods we can call to get things set up, so:
+This is the `setup` routine, where we make sure that all the things we need to have available to us are all in place.  One of the things the `helper.rb` script does for us is provide the `@site` variable, which is a `Jekyll::Site` object (which is conceptually linked to the `{% raw %}{{ site }}{% endraw %}` variable you'll have seen in your Jekyll templates.)  This object has various methods we can call to get things set up, so:
 
  * `read`: reads all the Markdown templates etc.
  * `generate`: generates the `Page` objects based on the information read in previous step
@@ -114,7 +124,7 @@ Spot a problem?  The `image` include and the `images.yml` datafile aren't in the
 
 ### Running the test
 
-Now we can run the test with:
+Now we can run the test with `rake test` (in the transcript below, I'm running with the `-v` option for "verbose" to get a little extra information):
 
 {% highlight shell %}
 $ rake test TESTOPTS="-v"
