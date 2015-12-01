@@ -137,14 +137,72 @@ Finished tests in 0.565313s, 5.3068 tests/s, 1.7689 assertions/s.
 3 tests, 1 assertions, 0 failures, 0 errors, 0 skips
 {% endhighlight %}
 
-No, I have no idea why it thinks there are 3 tests.
+No, I have no idea why it thinks there are 3 tests.  Finally, if you
+try to build or serve the project now (at least with Jekyll 3.x), you'll
+actually see the test post showing up, despite it not living in the usual
+`_posts` directory. So we'll exclude it from `_config.yml` like so:
+
+{% highlight yaml %}
+exclude: ['test']
+{% endhighlight %}
 
 ## <a id="no-tests-please-we-re-British" /> Refactoring into a plugin
 
-TODO
+The type of plugin we're going to use here is simply a custom tag: in fact, it's
+almost stretching things to call this a Jekyll Plugin, as it's effectively an
+extension to the Liquid templating system.  As the [documentation][jekyllrb-plugins]
+suggests, the simplest way to use our plugin is to place it in the `_plugins`
+so let's create a file there called `tag_image.rb`:
+
+{% highlight ruby %}
+module Jekyll
+  class ImageTag < Liquid::Tag
+
+    def initialize(tag_name, text, tokens)
+      super
+{% endhighlight %}
+
+
+This creates a new class called `Jekyll::ImageTag` which is a subclass of `Liquid::Tag`.
+When this is instantiated, the `initialize` gets the `text` (e.g. everything else
+inside the tag) and some tokens (which we'll come back to.)  We want to just
+save the text into a variable (for example: `@image`) so that we can use it later.
+But careful!  In the example `{% raw %}{% image squirrel %}{% endraw %}`, the string
+that goes all the way to the actual ending delimeter is in fact `'squirrel '` (with an
+extra space at the end!)  So we'll `.strip` out the whitespace:
+
+{% highlight ruby %}
+      @image = text.strip
+    end
+{% endhighlight %}
+
+Now we have to create our `render` method:
+
+{% highlight ruby %}
+    def render(context)
+      # .... ?
+    end
+{% endhighlight %}
+
+What are we going to put in here?  The docs helpfully tell us that we can get access
+to the `Jekyll::Site` object from `context.registers[:site]`.  So we'll start by
+extracting the image from the data file, just as we did in the template:
+
+{% highlight ruby %}
+    def render(context)
+       site = context.registers[:site]
+       image = site.data['images'][@image]
+{% endhighlight %}
+
+And now... we could render this in a similar way to the template, using Ruby's own
+strings.  But why not take advantage of the fact we've *already* written a template
+to accomplish this exact task?
+
+# TODO: tokens?
 
 [github-Rakefile]: https://github.com/osfameron/jekyll-plugins-tutorial/blob/master/Rakefile
 [github-Gemfile]: https://github.com/osfameron/jekyll-plugins-tutorial/blob/master/Gemfile
 [github-helper-rb]: https://github.com/osfameron/jekyll-plugins-tutorial/blob/master/test/helper.rb
 [github-test_image_output-rb]: https://github.com/osfameron/jekyll-plugins-tutorial/blob/master/test/test_image_output.rb
 [github-test-image-md]: https://github.com/osfameron/jekyll-plugins-tutorial/blob/master/test/source/_posts/2015-11-29-test-image.md
+[jekyllrb-plugins]: http://jekyllrb.com/docs/plugins

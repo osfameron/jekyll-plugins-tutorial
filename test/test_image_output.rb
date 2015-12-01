@@ -10,7 +10,7 @@ class TestImageOutput < JekyllUnitTest
       @site.render
     end
 
-    should "Render image correctly" do
+    should "Render image correctly via template" do
       posts = @site.posts.docs
       post = posts[0]
 
@@ -29,6 +29,13 @@ class TestImageOutput < JekyllUnitTest
 
 EXPECTED
 
+    end
+
+    should "Render image correctly via tag" do
+      posts = @site.posts.docs
+      post = posts[1]
+
+      assert_equal('wibble', post.output, 'Image ok')
     end
   end
 end
