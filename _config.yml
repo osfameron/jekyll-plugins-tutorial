@@ -17,3 +17,4 @@ disqus_shortname: jekyllpluginstutorial
 
 # Build settings
 markdown: kramdown
+exclude: ['test']
