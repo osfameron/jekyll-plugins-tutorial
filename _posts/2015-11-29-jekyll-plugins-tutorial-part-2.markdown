@@ -4,12 +4,7 @@ title:  "2. Refactoring into a plugin... with tests!"
 date:   2015-11-29 14:20:00 +0000
 ---
 
-In the [last post]({{ post.prev.url }}), I showed how to create an image widget that reuses source, description, and attribution data from a datafile.  For all of that tutorial, I held back from actually turning it into a plugin -- it's always a good practice to Keep It Simple and so far we didn't actually *need* the extra flexibility of a plugin.  Remember these words of the ancients.
-
-> The best plugin is the plugin that is not written
-> -- Confucius <super><a href="#note-1">[1]</a></super>
-
-But I did promise you a tutorial, and so let's now refactor what we've already done into a plugin so that instead of:
+In the [last post]({{ post.prev.url }}), I showed how to create an image widget that reuses source, description, and attribution data from a datafile.  For all of that tutorial, I held back from actually turning it into a plugin, as it's always a good practice to Keep It Simple. But I did promise you a tutorial, and so let's now refactor what we've already done into a plugin so that instead of:
 
 {% highlight markdown %}{% raw %}
     {% include image id="squirrel" %}
@@ -75,7 +70,6 @@ This is the `setup` routine, where we make sure that all the things we need to h
 
 The test itself is now in a `should` block.  (Basically it's a slightly cutesy way of writing `test`).  We now retrieve all the posts.  Let's assume that our rendered image is in the first of those.
 
-
 {% highlight ruby %}
       assert_equal(<<EXPECTED, post.output, 'Image ok')
 
@@ -103,7 +97,8 @@ end
 
 Finally we close the `should` (test), the `context` (group of tests), and the `class` (outer group of tests).
 
-But there's a problem... the first post in this blog doesn't contain just an image.  It contains an entire blog post!  The `helper.rb` library works around this by allowing you to create an entire new Jekyll directory in `test/source/`.  So let's make a really simple post in `[test/source/_posts/2015-11-29-test-image.md][github-test-image-md]
+But there's a problem... the first post in this blog doesn't contain just an image.  It contains an [entire blog post!]({{ post.prev.url }}) 
+Looking at how the Jekyll project's own tests work, their `helper.rb` library works around this by allowing you to create an entire new Jekyll directory in `test/source/`.  So let's make a really simple post in `[test/source/_posts/2015-11-29-test-image.md][github-test-image-md]
 
 {% highlight markdown %}{% raw %}
 ---
@@ -113,7 +108,7 @@ But there's a problem... the first post in this blog doesn't contain just an ima
 
 We have to include some YAML frontmatter to make sure Jekyll processes the post.  As we don't have a `layout`, the image will be displayed 'as is' without any HTML header and footer around it.
 
-Spot a problem?  The `image` include and the `images.yml` datafile aren't in the `test/source/` directory, but in our outer one!  Of course we could simply copy them across, but it's much more elegant to link them (so that the test version is always in sync with the one in your main project.)  In Linux or OSX just do:
+Spot a problem?  The `image` include and the `images.yml` datafile aren't in the `test/source/` directory, but in our outer one (e.g. this series of posts)!  Of course we could simply copy them across, but it's much more elegant to link them (so that the test version is always in sync with the one in your main project.)  In Linux or OSX just do:
 
 {% highlight shell %}
  $  cd test/source/
@@ -147,9 +142,6 @@ No, I have no idea why it thinks there are 3 tests.
 ## <a id="no-tests-please-we-re-British" /> Refactoring into a plugin
 
 TODO
-
-### Notes:
-> <a id="note-1">**1.**</a> may not actually be true.
 
 [github-Rakefile]: https://github.com/osfameron/jekyll-plugins-tutorial/blob/master/Rakefile
 [github-Gemfile]: https://github.com/osfameron/jekyll-plugins-tutorial/blob/master/Gemfile
