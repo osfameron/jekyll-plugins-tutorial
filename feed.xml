@@ -6,9 +6,303 @@
 </description>
     <link>osfameron.github.io/jekyll-plugins-tutorial/</link>
     <atom:link href="osfameron.github.io/jekyll-plugins-tutorial/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Sun, 29 Nov 2015 09:42:54 +0000</pubDate>
-    <lastBuildDate>Sun, 29 Nov 2015 09:42:54 +0000</lastBuildDate>
+    <pubDate>Sat, 05 Dec 2015 15:30:21 +0000</pubDate>
+    <lastBuildDate>Sat, 05 Dec 2015 15:30:21 +0000</lastBuildDate>
     <generator>Jekyll v3.0.0</generator>
+    
+      <item>
+        <title>2. Refactoring into a plugin... with tests!</title>
+        <description>
+&lt;figure&gt;
+  &lt;img alt=&quot;hella plugs&quot; src=&quot;/jekyll-plugins-tutorial/images/plugins.jpg&quot; /&gt;
+  &lt;figcaption&gt;
+    hella plugs
+    Image credit:
+    &lt;a href=&quot;https://www.flickr.com/photos/murray9000/16787166482/&quot;&gt;
+      CC-BY-NC-ND murray 9K
+    &lt;/a&gt;
+  &lt;/figcaption&gt;
+&lt;/figure&gt;
+
+&lt;p&gt;In the &lt;a href=&quot;/jekyll-plugins-tutorial/2015/11/28/jekyll-plugins-tutorial-part-1.html&quot;&gt;last post&lt;/a&gt;, I showed how to create an image widget that reuses source, description, and attribution data from a datafile.  For all of that tutorial, I held back from actually turning it into a plugin, as it’s always a good practice to Keep It Simple. But I did promise you a tutorial, and so let’s now refactor what we’ve already done into a plugin so that instead of:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-markdown&quot; data-lang=&quot;markdown&quot;&gt;    {% include image id=&quot;squirrel&quot; %}&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;we can call:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-markdown&quot; data-lang=&quot;markdown&quot;&gt;    {% image squirrel %}&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;If the word “refactor” made you think “but what about tests?” then you’re in luck, as that’s the first thing we’re going to do.  (And if you thought “we don’t need no steenking tests”, then you can &lt;a href=&quot;#no-tests-please-we-re-British&quot;&gt;skip the bit about testing&lt;/a&gt;&lt;/p&gt;
+
+&lt;figure&gt;
+  &lt;img alt=&quot;Solo exam&quot; src=&quot;/jekyll-plugins-tutorial/images/solo_exam.jpg&quot; /&gt;
+  &lt;figcaption&gt;
+    Solo exam
+    Image credit:
+    &lt;a href=&quot;https://www.flickr.com/photos/18614695@N00/6394785643/&quot;&gt;
+      CC-BY Xavi&quot;
+    &lt;/a&gt;
+  &lt;/figcaption&gt;
+&lt;/figure&gt;
+
+&lt;h2 id=&quot;testing&quot;&gt;Testing&lt;/h2&gt;
+
+&lt;p&gt;The first step in making a change is to test the existing behaviour.  So essentially we want to check that the markup we created last time:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-markdown&quot; data-lang=&quot;markdown&quot;&gt;    {% include img id=&quot;squirrel&quot; %}&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;is rendered into the correct HTML.  As I couldn’t find a lot of information available on testing Jekyll plugins, I copied some of the infrastructure from the Jekyll project itself, with some modifications to simplify it.  Namely:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/osfameron/jekyll-plugins-tutorial/blob/master/Rakefile&quot;&gt;Rakefile&lt;/a&gt;: allows you to run the test by calling &lt;code&gt;rake test&lt;/code&gt; from the command line&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/osfameron/jekyll-plugins-tutorial/blob/master/Gemfile&quot;&gt;Gemfile&lt;/a&gt;: contains all the dependencies for testing, so you can install with &lt;code&gt;bundle install&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;test/
+    &lt;ul&gt;
+      &lt;li&gt;&lt;a href=&quot;https://github.com/osfameron/jekyll-plugins-tutorial/blob/master/test/helper.rb&quot;&gt;helper.rb&lt;/a&gt;: various helper functions&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;(Comments from Ruby/Jekyll experts very welcome on cleaning up this cargo-culted material!)&lt;/p&gt;
+
+&lt;p&gt;Of course we now need a test!  The file is at &lt;a href=&quot;https://github.com/osfameron/jekyll-plugins-tutorial/blob/master/test/test_image_output.rb&quot;&gt;&lt;code&gt;test/test_image_output.rb&lt;/code&gt;&lt;/a&gt;, and we’ll go through it here in some detail:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-ruby&quot; data-lang=&quot;ruby&quot;&gt;&lt;span class=&quot;nb&quot;&gt;require&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&#39;helper&#39;&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;TestImageOutput&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;JekyllUnitTest&lt;/span&gt;
+  &lt;span class=&quot;n&quot;&gt;context&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;Rendering posts with images&quot;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;do&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;First we use the helper library, and create a class as a grouping for our test.
+Then we create a &lt;code&gt;context&lt;/code&gt;, with a human-readable name to define the particular things that we’re testing in it.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-ruby&quot; data-lang=&quot;ruby&quot;&gt;    &lt;span class=&quot;n&quot;&gt;setup&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;do&lt;/span&gt;
+      &lt;span class=&quot;vi&quot;&gt;@site&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;Site&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;new&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;site_configuration&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+      &lt;span class=&quot;vi&quot;&gt;@site&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;read&lt;/span&gt;
+      &lt;span class=&quot;vi&quot;&gt;@site&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;generate&lt;/span&gt;
+      &lt;span class=&quot;vi&quot;&gt;@site&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;render&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;This is the &lt;code&gt;setup&lt;/code&gt; routine, where we make sure that all the things we need to have available to us are all in place.  One of the things the &lt;code&gt;helper.rb&lt;/code&gt; script does for us is provide the &lt;code&gt;@site&lt;/code&gt; variable, which is a &lt;code&gt;Jekyll::Site&lt;/code&gt; object (which is conceptually linked to the &lt;code&gt;{{ site }}&lt;/code&gt; variable you’ll have seen in your Jekyll templates.)  This object has various methods we can call to get things set up, so:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;code&gt;read&lt;/code&gt;: reads all the Markdown templates etc.&lt;/li&gt;
+  &lt;li&gt;&lt;code&gt;generate&lt;/code&gt;: generates the &lt;code&gt;Page&lt;/code&gt; objects based on the information read in previous step&lt;/li&gt;
+  &lt;li&gt;&lt;code&gt;render&lt;/code&gt;: finally turns everything into HTML and writes it to the &lt;code&gt;_site/&lt;/code&gt; directory&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-ruby&quot; data-lang=&quot;ruby&quot;&gt;    &lt;span class=&quot;n&quot;&gt;should&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;Render image correctly&quot;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;do&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;posts&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;vi&quot;&gt;@site&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;posts&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;docs&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;post&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;posts&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;The test itself is now in a &lt;code&gt;should&lt;/code&gt; block.  (Basically it’s a slightly cutesy way of writing &lt;code&gt;test&lt;/code&gt;).  We now retrieve all the posts.  Let’s assume that our rendered image is in the first of those.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-ruby&quot; data-lang=&quot;ruby&quot;&gt;      &lt;span class=&quot;n&quot;&gt;assert_equal&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;&amp;lt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;EXPECTED&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;post&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;output&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&#39;Image ok&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;sh&quot;&gt;
+
+&amp;lt;figure&amp;gt;
+  &amp;lt;img alt=&quot;A lovely squirrel (via include + data)&quot; src=&quot;/images/squirrel.jpg&quot; /&amp;gt;
+  &amp;lt;figcaption&amp;gt;
+    A lovely squirrel (via include + data)
+    Image credit:
+    &amp;lt;a href=&quot;https://www.flickr.com/photos/47644980@N00/5681166704&quot;&amp;gt;
+      CC-BY-NC-SA hakim.cassimally
+    &amp;lt;/a&amp;gt;
+  &amp;lt;/figcaption&amp;gt;
+&amp;lt;/figure&amp;gt;
+
+&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;EXPECTED&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;We now simply assert that the output generated in the post is what we’re expecting.  Note that we’re using a ‘heredoc’, to be able to embed the multi-line string neatly into our Ruby source.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-ruby&quot; data-lang=&quot;ruby&quot;&gt;    &lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Finally we close the &lt;code&gt;should&lt;/code&gt; (test), the &lt;code&gt;context&lt;/code&gt; (group of tests), and the &lt;code&gt;class&lt;/code&gt; (outer group of tests).&lt;/p&gt;
+
+&lt;p&gt;But there’s a problem… the first post in this blog doesn’t contain just an image.  It contains an &lt;a href=&quot;/jekyll-plugins-tutorial/2015/11/28/jekyll-plugins-tutorial-part-1.html&quot;&gt;entire blog post!&lt;/a&gt; 
+Looking at how the Jekyll project’s own tests work, their &lt;code&gt;helper.rb&lt;/code&gt; library works around this by allowing you to create an entire new Jekyll directory in &lt;code&gt;test/source/&lt;/code&gt;.  So let’s make a really simple post in `&lt;a href=&quot;https://github.com/osfameron/jekyll-plugins-tutorial/blob/master/test/source/_posts/2015-11-29-test-image.md&quot;&gt;test/source/_posts/2015-11-29-test-image.md&lt;/a&gt;&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-markdown&quot; data-lang=&quot;markdown&quot;&gt;&lt;span class=&quot;nn&quot;&gt;---&lt;/span&gt;
+&lt;span class=&quot;nn&quot;&gt;---&lt;/span&gt;
+{% include image id=&#39;squirrel&#39; %}&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;We have to include some YAML frontmatter to make sure Jekyll processes the post.  As we don’t have a &lt;code&gt;layout&lt;/code&gt;, the image will be displayed ‘as is’ without any HTML header and footer around it.&lt;/p&gt;
+
+&lt;p&gt;Spot a problem?  The &lt;code&gt;image&lt;/code&gt; include and the &lt;code&gt;images.yml&lt;/code&gt; datafile aren’t in the &lt;code&gt;test/source/&lt;/code&gt; directory, but in our outer one (e.g. this series of posts)!  Of course we could simply copy them across, but it’s much more elegant to link them (so that the test version is always in sync with the one in your main project.)  In Linux or OSX just do:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-shell&quot; data-lang=&quot;shell&quot;&gt; &lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;cd test&lt;/span&gt;/source/
+ &lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt; ln -s ../../_includes/ .
+ &lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt; ln -s ../../_data/ .
+ &lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;cd&lt;/span&gt; -&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;h3 id=&quot;running-the-test&quot;&gt;Running the test&lt;/h3&gt;
+
+&lt;p&gt;Now we can run the test with &lt;code&gt;rake test&lt;/code&gt; (in the transcript below, I’m running with the &lt;code&gt;-v&lt;/code&gt; option for “verbose” to get a little extra information):&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-shell&quot; data-lang=&quot;shell&quot;&gt;&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;rake &lt;span class=&quot;nb&quot;&gt;test &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;TESTOPTS&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;-v&quot;&lt;/span&gt;
+
+/usr/bin/ruby2.0 -I&lt;span class=&quot;s2&quot;&gt;&quot;lib:lib:test&quot;&lt;/span&gt; -I&lt;span class=&quot;s2&quot;&gt;&quot;/var/lib/gems/2.0.0/gems/rake-10.4.2/lib&quot;&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;/var/lib/gems/2.0.0/gems/rake-10.4.2/lib/rake/rake_test_loader.rb&quot;&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;test/**/test_*.rb&quot;&lt;/span&gt; -v
+
+&lt;span class=&quot;c&quot;&gt;# Running tests with run options -v --seed 43462:&lt;/span&gt;
+
+TestImageOutput#test_dir 0.00 &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; .
+TestImageOutput#test_: Rendering posts with images should Render image correctly.  0.56 &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; .
+JekyllUnitTest#test_dir 0.00 &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; .
+
+Finished tests &lt;span class=&quot;k&quot;&gt;in &lt;/span&gt;0.565313s, 5.3068 tests/s, 1.7689 assertions/s.
+
+3 tests, 1 assertions, 0 failures, 0 errors, 0 skips&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;No, I have no idea why it thinks there are 3 tests.  Finally, if you
+try to build or serve the project now (at least with Jekyll 3.x), you’ll
+actually see the test post showing up, despite it not living in the usual
+&lt;code&gt;_posts&lt;/code&gt; directory. So we’ll exclude it from &lt;code&gt;_config.yml&lt;/code&gt; like so:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-yaml&quot; data-lang=&quot;yaml&quot;&gt;&lt;span class=&quot;s&quot;&gt;exclude&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;pi&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&#39;&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;test&#39;&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;]&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;h2 id=&quot;a-idno-tests-please-we-re-british--refactoring-into-a-plugin&quot;&gt;&lt;a id=&quot;no-tests-please-we-re-British&quot;&gt;&lt;/a&gt; Refactoring into a plugin&lt;/h2&gt;
+
+&lt;p&gt;The type of plugin we’re going to use here is simply a custom tag.  This is probably
+the simplest kind of plugin we can do (and is arguably more like an an
+extension to the Liquid templating system.)  As the
+&lt;a href=&quot;http://jekyllrb.com/docs/plugins&quot;&gt;documentation&lt;/a&gt;
+suggests, the simplest way to use our plugin is to place it in the &lt;code&gt;_plugins&lt;/code&gt;
+so let’s create a file there called &lt;code&gt;tag_image.rb&lt;/code&gt;:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-ruby&quot; data-lang=&quot;ruby&quot;&gt;&lt;span class=&quot;k&quot;&gt;module&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;Jekyll&lt;/span&gt;
+  &lt;span class=&quot;k&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;ImageTag&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;Liquid&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;Tag&lt;/span&gt;
+
+    &lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;initialize&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;tag_name&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;text&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;tokens&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+      &lt;span class=&quot;k&quot;&gt;super&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;This creates a new class called &lt;code&gt;Jekyll::ImageTag&lt;/code&gt; which is a subclass of &lt;code&gt;Liquid::Tag&lt;/code&gt;.
+When this is instantiated, the &lt;code&gt;initialize&lt;/code&gt; gets the &lt;code&gt;text&lt;/code&gt; (e.g. everything
+else inside the tag) and some tokens (which we’ll come back to later in this
+series.)  We want to just save the text into a variable (for example: &lt;code&gt;@image&lt;/code&gt;)
+so that we can use it later. But careful!  In the example &lt;code&gt;{% image
+squirrel %}&lt;/code&gt;, the string that goes all the way to the actual ending
+delimeter is in fact &lt;code&gt;&#39;squirrel &#39;&lt;/code&gt; (with an extra space at the end!)  So we’ll
+&lt;code&gt;.strip&lt;/code&gt; out the whitespace:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-ruby&quot; data-lang=&quot;ruby&quot;&gt;      &lt;span class=&quot;vi&quot;&gt;@image_id&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;text&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;strip&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Now we have to create our &lt;code&gt;render&lt;/code&gt; method:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-ruby&quot; data-lang=&quot;ruby&quot;&gt;    &lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;render&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;context&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+      &lt;span class=&quot;c1&quot;&gt;# .... ?&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;What are we going to put in here?  The docs helpfully tell us that we can get access
+to the &lt;code&gt;Jekyll::Site&lt;/code&gt; object from &lt;code&gt;context.registers[:site]&lt;/code&gt;.  So we’ll start by
+extracting the image from the data file, just as we did in the template:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-ruby&quot; data-lang=&quot;ruby&quot;&gt;    &lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;render&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;context&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+       &lt;span class=&quot;n&quot;&gt;site&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;context&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;registers&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;ss&quot;&gt;:site&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+       &lt;span class=&quot;n&quot;&gt;image&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;site&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;data&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&#39;images&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;][&lt;/span&gt;&lt;span class=&quot;vi&quot;&gt;@image_id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;How did we know that we needed to use &lt;code&gt;.data&lt;/code&gt; to access the data &lt;em&gt;method&lt;/em&gt;? And how
+did we know that it returns a &lt;em&gt;dictionary&lt;/em&gt;, so we then need to index into it with
+&lt;code&gt;[&#39;images&#39;]&lt;/code&gt;?  As there doesn’t seem to be a complete documentation of the
+Jekyll data model, I used a combination of trial-and-error, and reading the
+&lt;a href=&quot;https://github.com/jekyll/jekyll&quot;&gt;source&lt;/a&gt; (which is reasonably easy to read, even if, like me,
+you’re not a Ruby expert.)  One helpful rule of thumb is that anything that’s
+&lt;em&gt;standard&lt;/em&gt; (every Site object has data) will tend to be object methods, while
+things that are user-defined will be dictionaries.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;And now… we could render this in a similar way to the template, using Ruby’s own
+strings.  But why not take advantage of the fact we’ve &lt;em&gt;already&lt;/em&gt; written a template
+to accomplish this exact task?  Now, we could create and render
+a &lt;code&gt;Liquid::Template&lt;/code&gt; object as described in 
+&lt;a href=&quot;https://github.com/Shopify/liquid/wiki/Liquid-for-Programmers&quot;&gt;Liquid for Programmers&lt;/a&gt;.  Now all we have to do is make sure
+that all the relevant information is passed (&lt;code&gt;site&lt;/code&gt;, &lt;code&gt;post&lt;/code&gt;, &lt;code&gt;include&lt;/code&gt; and so on,
+depending on what the template include needs.)&lt;/p&gt;
+
+&lt;p&gt;But there’s an even better approach:
+let’s do exactly what Jekyll would do to &lt;code&gt;{% include %}&lt;/code&gt; a partial.  To find out what that is, let’s look in the source for
+&lt;a href=&quot;https://github.com/jekyll/jekyll/blob/master/lib/jekyll/tags/include.rb&quot;&gt;&lt;code&gt;lib/jekyll/tags/include.rb&lt;/code&gt;&lt;/a&gt;.  The &lt;code&gt;initialize&lt;/code&gt; method is
+overly complicated for our needs (it parses the syntax for the &lt;code&gt;include&lt;/code&gt; tag, while
+ours is much simpler).  But we can copy over chunks of the &lt;code&gt;render&lt;/code&gt; method (simplifying
+as we go):&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-ruby&quot; data-lang=&quot;ruby&quot;&gt;      &lt;span class=&quot;n&quot;&gt;path&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;no&quot;&gt;File&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;join&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&#39;_includes&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&#39;image&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+
+      &lt;span class=&quot;n&quot;&gt;partial&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;site&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;liquid_renderer&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;file&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;path&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;parse&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;no&quot;&gt;File&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;read&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;path&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+
+      &lt;span class=&quot;n&quot;&gt;context&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;stack&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;do&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;context&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s1&quot;&gt;&#39;include&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;image&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;partial&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;render!&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;context&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+      &lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;h3 id=&quot;did-it-work&quot;&gt;Did it work?&lt;/h3&gt;
+
+&lt;p&gt;If you followed the first part of this tutorial, you’ll know that the easiest way
+to find out if it worked is to write a test!  Either way, you’ll probably want to
+create a post with the new tag.  I’ll create it in 
+&lt;code&gt;test/source/_posts/2015-12-05-test-image-tag.md&lt;/code&gt; as follows:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-markdown&quot; data-lang=&quot;markdown&quot;&gt;&lt;span class=&quot;nn&quot;&gt;---&lt;/span&gt;
+&lt;span class=&quot;nn&quot;&gt;---&lt;/span&gt;
+{% image squirrel %}&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Then we’ll add a new test for this new post.  As we’ll now have two posts, let’s
+extract out the &lt;code&gt;@expected&lt;/code&gt; value into the &lt;code&gt;setup&lt;/code&gt; method and then we just have:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-ruby&quot; data-lang=&quot;ruby&quot;&gt;    &lt;span class=&quot;n&quot;&gt;should&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;Render image correctly via template&quot;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;do&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;posts&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;vi&quot;&gt;@site&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;posts&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;docs&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;post&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;posts&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;assert_equal&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;vi&quot;&gt;@expected&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;post&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;output&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&#39;Image ok&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+
+    &lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;
+
+    &lt;span class=&quot;n&quot;&gt;should&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;Render image correctly via tag&quot;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;do&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;posts&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;vi&quot;&gt;@site&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;posts&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;docs&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;post&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;posts&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;mi&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;
+      &lt;span class=&quot;n&quot;&gt;assert_equal&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;vi&quot;&gt;@expected&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;post&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;output&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s1&quot;&gt;&#39;Image ok&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;end&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;But… there’s a problem.  The test directory doesn’t have our plugin in it!  So once
+again, let’s link it:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-shell&quot; data-lang=&quot;shell&quot;&gt; &lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;cd test&lt;/span&gt;/source/
+ &lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt; ln -s ../../_plugins/ .
+ &lt;span class=&quot;nv&quot;&gt;$ &lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;cd&lt;/span&gt; -&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Tests pass with &lt;code&gt;rake test&lt;/code&gt;.  Alternatively, if you’re simply rendering a post,
+check that you get the correct result:&lt;/p&gt;
+
+&lt;figure&gt;
+  &lt;img alt=&quot;A lovely squirrel (via include + data)&quot; src=&quot;/jekyll-plugins-tutorial/images/squirrel.jpg&quot; /&gt;
+  &lt;figcaption&gt;
+    A lovely squirrel (via include + data)
+    Image credit:
+    &lt;a href=&quot;https://www.flickr.com/photos/47644980@N00/5681166704&quot;&gt;
+      CC-BY-NC-SA hakim.cassimally
+    &lt;/a&gt;
+  &lt;/figcaption&gt;
+&lt;/figure&gt;
+
+&lt;p&gt;(You didn’t think you were going to get away without seeing yet another squirrel
+picture this post did you?)&lt;/p&gt;
+
+&lt;h2 id=&quot;wrapping-up&quot;&gt;Wrapping up&lt;/h2&gt;
+
+&lt;p&gt;So, we’ve seen how to refactor a template include into a plugin, &lt;em&gt;safely&lt;/em&gt; (with
+tests to help catch any errors we make.)  I hope you’ve found this useful, and would
+welcome comments or criticism!  Next post in around a week - please let me know if
+there is any specific topic you’d like me to cover, or a small plugin that you need
+and which might be interesting to write about!&lt;/p&gt;
+
+</description>
+        <pubDate>Sat, 05 Dec 2015 15:20:00 +0000</pubDate>
+        <link>osfameron.github.io/jekyll-plugins-tutorial/2015/12/05/jekyll-plugins-tutorial-part-2.html</link>
+        <guid isPermaLink="true">osfameron.github.io/jekyll-plugins-tutorial/2015/12/05/jekyll-plugins-tutorial-part-2.html</guid>
+        
+        
+      </item>
     
       <item>
         <title>1. Introduction to plugins with Jekyll 3.0: pictures of squirrels</title>
