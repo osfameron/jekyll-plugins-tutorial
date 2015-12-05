@@ -4,3 +4,15 @@ squirrel:
   alt: "A lovely squirrel (via include + data)"
   credit: CC-BY-NC-SA hakim.cassimally
   creditlink: https://www.flickr.com/photos/47644980@N00/5681166704
+
+plugins:
+  src: /images/plugins.jpg
+  alt: "hella plugs"
+  credit: CC-BY-NC-ND murray 9K
+  creditlink: https://www.flickr.com/photos/murray9000/16787166482/
+
+solo_exam:
+  src: /images/solo_exam.jpg
+  alt: "Solo exam"
+  credit: CC-BY Xavi"
+  creditlink: https://www.flickr.com/photos/18614695@N00/6394785643/

@@ -2,19 +2,14 @@ require 'helper'
 
 class TestImageOutput < JekyllUnitTest
 
+
   context "Rendering posts with images" do
     setup do
       @site = Site.new(site_configuration)
       @site.read
       @site.generate
       @site.render
-    end
-
-    should "Render image correctly via template" do
-      posts = @site.posts.docs
-      post = posts[0]
-
-      assert_equal(<<EXPECTED, post.output, 'Image ok')
+      @expected = <<EXPECTED   
 
 <figure>
   <img alt="A lovely squirrel (via include + data)" src="/images/squirrel.jpg" />
@@ -28,14 +23,19 @@ class TestImageOutput < JekyllUnitTest
 </figure>
 
 EXPECTED
+    end
+
+    should "Render image correctly via template" do
+      posts = @site.posts.docs
+      post = posts[0]
+      assert_equal(@expected, post.output, 'Image ok')
 
     end
 
     should "Render image correctly via tag" do
       posts = @site.posts.docs
       post = posts[1]
-
-      assert_equal('wibble', post.output, 'Image ok')
+      assert_equal(@expected, post.output, 'Image ok')
     end
   end
 end

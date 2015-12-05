@@ -1,10 +1,12 @@
 ---
 layout: post
 title:  "2. Refactoring into a plugin... with tests!"
-date:   2015-11-29 14:20:00 +0000
+date:   2015-12-05 15:20:00 +0000
 ---
 
-In the [last post]({{ post.prev.url }}), I showed how to create an image widget that reuses source, description, and attribution data from a datafile.  For all of that tutorial, I held back from actually turning it into a plugin, as it's always a good practice to Keep It Simple. But I did promise you a tutorial, and so let's now refactor what we've already done into a plugin so that instead of:
+{% image plugins %}
+
+In the [last post]({{ site.baseurl }}{{ page.previous.url }}), I showed how to create an image widget that reuses source, description, and attribution data from a datafile.  For all of that tutorial, I held back from actually turning it into a plugin, as it's always a good practice to Keep It Simple. But I did promise you a tutorial, and so let's now refactor what we've already done into a plugin so that instead of:
 
 {% highlight markdown %}{% raw %}
     {% include image id="squirrel" %}
@@ -17,6 +19,8 @@ we can call:
 {% endraw %}{% endhighlight %}
 
 If the word "refactor" made you think "but what about tests?" then you're in luck, as that's the first thing we're going to do.  (And if you thought "we don't need no steenking tests", then you can [skip the bit about testing](#no-tests-please-we-re-British)
+
+{% image solo_exam %}
 
 ## Testing
 
@@ -97,7 +101,7 @@ end
 
 Finally we close the `should` (test), the `context` (group of tests), and the `class` (outer group of tests).
 
-But there's a problem... the first post in this blog doesn't contain just an image.  It contains an [entire blog post!]({{ post.prev.url }}) 
+But there's a problem... the first post in this blog doesn't contain just an image.  It contains an [entire blog post!]({{ site.baseurl }}{{ page.previous.url }}) 
 Looking at how the Jekyll project's own tests work, their `helper.rb` library works around this by allowing you to create an entire new Jekyll directory in `test/source/`.  So let's make a really simple post in `[test/source/_posts/2015-11-29-test-image.md][github-test-image-md]
 
 {% highlight markdown %}{% raw %}
@@ -148,9 +152,10 @@ exclude: ['test']
 
 ## <a id="no-tests-please-we-re-British" /> Refactoring into a plugin
 
-The type of plugin we're going to use here is simply a custom tag: in fact, it's
-almost stretching things to call this a Jekyll Plugin, as it's effectively an
-extension to the Liquid templating system.  As the [documentation][jekyllrb-plugins]
+The type of plugin we're going to use here is simply a custom tag.  This is probably
+the simplest kind of plugin we can do (and is arguably more like an an
+extension to the Liquid templating system.)  As the
+[documentation][jekyllrb-plugins]
 suggests, the simplest way to use our plugin is to place it in the `_plugins`
 so let's create a file there called `tag_image.rb`:
 
@@ -162,17 +167,17 @@ module Jekyll
       super
 {% endhighlight %}
 
-
 This creates a new class called `Jekyll::ImageTag` which is a subclass of `Liquid::Tag`.
-When this is instantiated, the `initialize` gets the `text` (e.g. everything else
-inside the tag) and some tokens (which we'll come back to.)  We want to just
-save the text into a variable (for example: `@image`) so that we can use it later.
-But careful!  In the example `{% raw %}{% image squirrel %}{% endraw %}`, the string
-that goes all the way to the actual ending delimeter is in fact `'squirrel '` (with an
-extra space at the end!)  So we'll `.strip` out the whitespace:
+When this is instantiated, the `initialize` gets the `text` (e.g. everything
+else inside the tag) and some tokens (which we'll come back to later in this
+series.)  We want to just save the text into a variable (for example: `@image`)
+so that we can use it later. But careful!  In the example `{% raw %}{% image
+squirrel %}{% endraw %}`, the string that goes all the way to the actual ending
+delimeter is in fact `'squirrel '` (with an extra space at the end!)  So we'll
+`.strip` out the whitespace:
 
 {% highlight ruby %}
-      @image = text.strip
+      @image_id = text.strip
     end
 {% endhighlight %}
 
@@ -191,14 +196,100 @@ extracting the image from the data file, just as we did in the template:
 {% highlight ruby %}
     def render(context)
        site = context.registers[:site]
-       image = site.data['images'][@image]
+       image = site.data['images'][@image_id]
 {% endhighlight %}
+
+> How did we know that we needed to use `.data` to access the data *method*? And how
+> did we know that it returns a *dictionary*, so we then need to index into it with
+> `['images']`?  As there doesn't seem to be a complete documentation of the
+> Jekyll data model, I used a combination of trial-and-error, and reading the
+> [source][github-jekyll] (which is reasonably easy to read, even if, like me,
+> you're not a Ruby expert.)  One helpful rule of thumb is that anything that's
+> *standard* (every Site object has data) will tend to be object methods, while
+> things that are user-defined will be dictionaries.
 
 And now... we could render this in a similar way to the template, using Ruby's own
 strings.  But why not take advantage of the fact we've *already* written a template
-to accomplish this exact task?
+to accomplish this exact task?  Now, we could create and render
+a `Liquid::Template` object as described in 
+[Liquid for Programmers][liquid-for-programmers].  Now all we have to do is make sure
+that all the relevant information is passed (`site`, `post`, `include` and so on,
+depending on what the template include needs.)  
 
-# TODO: tokens?
+But there's an even better approach:
+let's do exactly what Jekyll would do to `{% raw %}{% include %}{% endraw %}` a partial.  To find out what that is, let's look in the source for
+[`lib/jekyll/tags/include.rb`][jekyll-tags-include-rb].  The `initialize` method is
+overly complicated for our needs (it parses the syntax for the `include` tag, while
+ours is much simpler).  But we can copy over chunks of the `render` method (simplifying
+as we go):
+
+{% highlight ruby %}
+      path = File.join('_includes', 'image')
+
+      partial = site.liquid_renderer.file(path).parse(File.read(path))
+
+      context.stack do
+        context['include'] = image
+        partial.render!(context)
+      end
+    end
+{% endhighlight %}
+
+### Did it work?
+
+If you followed the first part of this tutorial, you'll know that the easiest way
+to find out if it worked is to write a test!  Either way, you'll probably want to
+create a post with the new tag.  I'll create it in 
+`test/source/_posts/2015-12-05-test-image-tag.md` as follows:
+
+{% highlight markdown %}{% raw %}
+---
+---
+{% image squirrel %}
+{% endraw %}{% endhighlight %}
+
+Then we'll add a new test for this new post.  As we'll now have two posts, let's
+extract out the `@expected` value into the `setup` method and then we just have:
+
+{% highlight ruby %}
+    should "Render image correctly via template" do
+      posts = @site.posts.docs
+      post = posts[0]
+      assert_equal(@expected, post.output, 'Image ok')
+
+    end
+
+    should "Render image correctly via tag" do
+      posts = @site.posts.docs
+      post = posts[1]
+      assert_equal(@expected, post.output, 'Image ok')
+    end
+{% endhighlight %}
+
+But... there's a problem.  The test directory doesn't have our plugin in it!  So once
+again, let's link it:
+
+{% highlight shell %}
+ $  cd test/source/
+ $  ln -s ../../_plugins/ .
+ $  cd -
+{% endhighlight %}
+
+Tests pass with `rake test`.  Alternatively, if you're simply rendering a post,
+check that you get the correct result:
+
+{% image squirrel %}
+
+(You didn't think you were going to get away without seeing yet another squirrel
+picture this post did you?)
+
+## Wrapping up
+
+So, we've seen how to refactor a template include into a plugin, *safely* (with
+tests to help catch any errors we make.)  I hope you've found this useful, and would
+welcome comments or criticism!  Next post in around a week - please let me know if
+there is any specific topic you'd like me to cover, or a small plugin that you need
+and which might be interesting to write about!
 
 [github-Rakefile]: https://github.com/osfameron/jekyll-plugins-tutorial/blob/master/Rakefile
 [github-Gemfile]: https://github.com/osfameron/jekyll-plugins-tutorial/blob/master/Gemfile
@@ -206,3 +297,6 @@ to accomplish this exact task?
 [github-test_image_output-rb]: https://github.com/osfameron/jekyll-plugins-tutorial/blob/master/test/test_image_output.rb
 [github-test-image-md]: https://github.com/osfameron/jekyll-plugins-tutorial/blob/master/test/source/_posts/2015-11-29-test-image.md
 [jekyllrb-plugins]: http://jekyllrb.com/docs/plugins
+[github-jekyll]: https://github.com/jekyll/jekyll
+[liquid-for-programmers]: https://github.com/Shopify/liquid/wiki/Liquid-for-Programmers
+[jekyll-tags-include-rb]: https://github.com/jekyll/jekyll/blob/master/lib/jekyll/tags/include.rb
